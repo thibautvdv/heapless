@@ -7,18 +7,12 @@ use core::{
     str::Utf8Error,
 };
 
-use generic_array::{
-    typenum::{consts::*, IsGreaterOrEqual},
-    ArrayLength, GenericArray,
-};
 use hash32;
 
 use crate::Vec;
 
 /// A fixed capacity [`String`](https://doc.rust-lang.org/std/string/struct.String.html)
-pub struct String<N>(#[doc(hidden)] pub crate::i::String<GenericArray<u8, N>>)
-where
-    N: ArrayLength<u8>;
+pub struct String<const N: usize>(#[doc(hidden)] pub crate::i::String<[u8; N]>);
 
 impl<A> crate::i::String<A> {
     /// `String` `const` constructor; wrap the returned value in [`String`](../struct.String.html)
@@ -29,10 +23,7 @@ impl<A> crate::i::String<A> {
     }
 }
 
-impl<N> String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> String<N> {
     /// Constructs a new, empty `String` with a fixed capacity of `N`
     ///
     /// # Examples
@@ -41,13 +32,12 @@ where
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
     /// // allocate the string on the stack
-    /// let mut s: String<U4> = String::new();
+    /// let mut s: String<4> = String::new();
     ///
     /// // allocate the string in a static variable
-    /// static mut S: String<U4> = String(heapless::i::String::new());
+    /// static mut S: String<4> = String(heapless::i::String::new());
     /// ```
     #[inline]
     pub fn new() -> Self {
@@ -70,9 +60,8 @@ where
     ///
     /// ```
     /// use heapless::{String, Vec};
-    /// use heapless::consts::*;
     ///
-    /// let mut v: Vec<u8, U8> = Vec::new();
+    /// let mut v: Vec<u8, 8> = Vec::new();
     /// v.push('a' as u8).unwrap();
     /// v.push('b' as u8).unwrap();
     ///
@@ -84,11 +73,10 @@ where
     ///
     /// ```
     /// use heapless::{String, Vec};
-    /// use heapless::consts::*;
     ///
     /// // some invalid bytes, in a vector
     ///
-    /// let mut v: Vec<u8, U8> = Vec::new();
+    /// let mut v: Vec<u8, 8> = Vec::new();
     /// v.push(0).unwrap();
     /// v.push(159).unwrap();
     /// v.push(146).unwrap();
@@ -125,9 +113,8 @@ where
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
-    /// let s: String<U4> = String::from("ab");
+    /// let s: String<4> = String::from("ab");
     /// let b = s.into_bytes();
     /// assert!(b.len() == 2);
     ///
@@ -146,9 +133,8 @@ where
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
-    /// let mut s: String<U4> = String::from("ab");
+    /// let mut s: String<4> = String::from("ab");
     /// assert!(s.as_str() == "ab");
     ///
     /// let _s = s.as_str();
@@ -167,9 +153,8 @@ where
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
-    /// let mut s: String<U4> = String::from("ab");
+    /// let mut s: String<4> = String::from("ab");
     /// let s = s.as_mut_str();
     /// s.make_ascii_uppercase();
     /// ```
@@ -203,7 +188,7 @@ where
     /// assert_eq!(s, "olleh");
     /// ```
     pub unsafe fn as_mut_vec(&mut self) -> &mut Vec<u8, N> {
-        &mut *(&mut self.0.vec as *mut crate::i::Vec<GenericArray<u8, N>> as *mut Vec<u8, N>)
+        &mut *(&mut self.0.vec as *mut crate::i::Vec<[u8; N]> as *mut Vec<u8, N>)
     }
 
     /// Appends a given string slice onto the end of this `String`.
@@ -214,9 +199,8 @@ where
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
-    /// let mut s: String<U8> = String::from("foo");
+    /// let mut s: String<8> = String::from("foo");
     ///
     /// assert!(s.push_str("bar").is_ok());
     ///
@@ -237,9 +221,8 @@ where
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
-    /// let mut s: String<U4> = String::new();
+    /// let mut s: String<4> = String::new();
     /// assert!(s.capacity() == 4);
     /// ```
     #[inline]
@@ -257,9 +240,8 @@ where
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
-    /// let mut s: String<U8> = String::from("abc");
+    /// let mut s: String<8> = String::from("abc");
     ///
     /// s.push('1').unwrap();
     /// s.push('2').unwrap();
@@ -300,9 +282,8 @@ where
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
-    /// let mut s: String<U8> = String::from("hello");
+    /// let mut s: String<8> = String::from("hello");
     ///
     /// s.truncate(2);
     ///
@@ -328,9 +309,8 @@ where
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
-    /// let mut s: String<U8> = String::from("foo");
+    /// let mut s: String<8> = String::from("foo");
     ///
     /// assert_eq!(s.pop(), Some('o'));
     /// assert_eq!(s.pop(), Some('o'));
@@ -362,9 +342,8 @@ where
     ///
     /// ```
     /// use heapless::String;
-    /// use heapless::consts::*;
     ///
-    /// let mut s: String<U8> = String::from("foo");
+    /// let mut s: String<8> = String::from("foo");
     ///
     /// s.clear();
     ///
@@ -378,19 +357,13 @@ where
     }
 }
 
-impl<N> Default for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> Default for String<N> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, N> From<&'a str> for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<'a, const N: usize> From<&'a str> for String<N> {
     fn from(s: &'a str) -> Self {
         let mut new = String::new();
         new.push_str(s).unwrap();
@@ -398,10 +371,7 @@ where
     }
 }
 
-impl<N> str::FromStr for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> str::FromStr for String<N> {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -411,10 +381,7 @@ where
     }
 }
 
-impl<N> Clone for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> Clone for String<N> {
     fn clone(&self) -> Self {
         Self(crate::i::String {
             vec: self.0.vec.clone(),
@@ -422,48 +389,33 @@ where
     }
 }
 
-impl<N> fmt::Debug for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> fmt::Debug for String<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         <str as fmt::Debug>::fmt(self, f)
     }
 }
 
-impl<N> fmt::Display for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> fmt::Display for String<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         <str as fmt::Display>::fmt(self, f)
     }
 }
 
-impl<N> hash::Hash for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> hash::Hash for String<N> {
     #[inline]
     fn hash<H: hash::Hasher>(&self, hasher: &mut H) {
         <str as hash::Hash>::hash(self, hasher)
     }
 }
 
-impl<N> hash32::Hash for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> hash32::Hash for String<N> {
     #[inline]
     fn hash<H: hash32::Hasher>(&self, hasher: &mut H) {
         <str as hash32::Hash>::hash(self, hasher)
     }
 }
 
-impl<N> fmt::Write for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> fmt::Write for String<N> {
     fn write_str(&mut self, s: &str) -> Result<(), fmt::Error> {
         self.push_str(s).map_err(|_| fmt::Error)
     }
@@ -473,10 +425,7 @@ where
     }
 }
 
-impl<N> ops::Deref for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> ops::Deref for String<N> {
     type Target = str;
 
     fn deref(&self) -> &str {
@@ -484,40 +433,27 @@ where
     }
 }
 
-impl<N> ops::DerefMut for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> ops::DerefMut for String<N> {
     fn deref_mut(&mut self) -> &mut str {
         self.as_mut_str()
     }
 }
 
-impl<N> AsRef<str> for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> AsRef<str> for String<N> {
     #[inline]
     fn as_ref(&self) -> &str {
         self
     }
 }
 
-impl<N> AsRef<[u8]> for String<N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> AsRef<[u8]> for String<N> {
     #[inline]
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
     }
 }
 
-impl<N1, N2> PartialEq<String<N2>> for String<N1>
-where
-    N1: ArrayLength<u8>,
-    N2: ArrayLength<u8>,
-{
+impl<const N1: usize, const N2: usize> PartialEq<String<N2>> for String<N1> {
     fn eq(&self, rhs: &String<N2>) -> bool {
         str::eq(&**self, &**rhs)
     }
@@ -529,10 +465,7 @@ where
 
 macro_rules! impl_eq {
     ($lhs:ty, $rhs:ty) => {
-        impl<'a, 'b, N> PartialEq<$rhs> for $lhs
-        where
-            N: ArrayLength<u8>,
-        {
+        impl<'a, 'b, const N: usize> PartialEq<$rhs> for $lhs {
             #[inline]
             fn eq(&self, other: &$rhs) -> bool {
                 str::eq(&self[..], &other[..])
@@ -543,10 +476,7 @@ macro_rules! impl_eq {
             }
         }
 
-        impl<'a, 'b, N> PartialEq<$lhs> for $rhs
-        where
-            N: ArrayLength<u8>,
-        {
+        impl<'a, 'b, const N: usize> PartialEq<$lhs> for $rhs {
             #[inline]
             fn eq(&self, other: &$lhs) -> bool {
                 str::eq(&self[..], &other[..])
@@ -562,14 +492,11 @@ macro_rules! impl_eq {
 impl_eq! { String<N>, str }
 impl_eq! { String<N>, &'a str }
 
-impl<N> Eq for String<N> where N: ArrayLength<u8> {}
+impl<const N: usize> Eq for String<N> {}
 
 macro_rules! impl_from_num {
     ($num:ty, $size:ty) => {
-        impl<N> From<$num> for String<N>
-        where
-            N: ArrayLength<u8> + IsGreaterOrEqual<$size, Output = True>,
-        {
+        impl<const N: usize> From<$num> for String<N> {
             fn from(s: $num) -> Self {
                 let mut new = String::new();
                 write!(&mut new, "{}", s).unwrap();
@@ -591,16 +518,16 @@ impl_from_num!(u64, U20);
 
 #[cfg(test)]
 mod tests {
-    use crate::{consts::*, String, Vec};
+    use crate::{String, Vec};
 
     #[test]
     fn static_new() {
-        static mut _S: String<U8> = String(crate::i::String::new());
+        static mut _S: String<8> = String(crate::i::String::new());
     }
 
     #[test]
     fn clone() {
-        let s1: String<U20> = String::from("abcd");
+        let s1: String<20> = String::from("abcd");
         let mut s2 = s1.clone();
         s2.push_str(" efgh").unwrap();
 
@@ -612,7 +539,7 @@ mod tests {
     fn debug() {
         use core::fmt::Write;
 
-        let s: String<U8> = String::from("abcd");
+        let s: String<8> = String::from("abcd");
         let mut std_s = std::string::String::new();
         write!(std_s, "{:?}", s).unwrap();
         assert_eq!("\"abcd\"", std_s);
@@ -622,7 +549,7 @@ mod tests {
     fn display() {
         use core::fmt::Write;
 
-        let s: String<U8> = String::from("abcd");
+        let s: String<8> = String::from("abcd");
         let mut std_s = std::string::String::new();
         write!(std_s, "{}", s).unwrap();
         assert_eq!("abcd", std_s);
@@ -630,7 +557,7 @@ mod tests {
 
     #[test]
     fn empty() {
-        let s: String<U4> = String::new();
+        let s: String<4> = String::new();
         assert!(s.capacity() == 4);
         assert_eq!(s, "");
         assert_eq!(s.len(), 0);
@@ -639,7 +566,7 @@ mod tests {
 
     #[test]
     fn from() {
-        let s: String<U4> = String::from("123");
+        let s: String<4> = String::from("123");
         assert!(s.len() == 3);
         assert_eq!(s, "123");
     }
@@ -648,23 +575,23 @@ mod tests {
     fn from_str() {
         use core::str::FromStr;
 
-        let s: String<U4> = String::<U4>::from_str("123").unwrap();
+        let s: String<4> = String::<4>::from_str("123").unwrap();
         assert!(s.len() == 3);
         assert_eq!(s, "123");
 
-        let e: () = String::<U2>::from_str("123").unwrap_err();
+        let e: () = String::<2>::from_str("123").unwrap_err();
         assert_eq!(e, ());
     }
 
     #[test]
     #[should_panic]
     fn from_panic() {
-        let _: String<U4> = String::from("12345");
+        let _: String<4> = String::from("12345");
     }
 
     #[test]
     fn from_utf8() {
-        let mut v: Vec<u8, U8> = Vec::new();
+        let mut v: Vec<u8, 8> = Vec::new();
         v.push('a' as u8).unwrap();
         v.push('b' as u8).unwrap();
 
@@ -674,7 +601,7 @@ mod tests {
 
     #[test]
     fn from_utf8_uenc() {
-        let mut v: Vec<u8, U8> = Vec::new();
+        let mut v: Vec<u8, 8> = Vec::new();
         v.push(240).unwrap();
         v.push(159).unwrap();
         v.push(146).unwrap();
@@ -685,7 +612,7 @@ mod tests {
 
     #[test]
     fn from_utf8_uenc_err() {
-        let mut v: Vec<u8, U8> = Vec::new();
+        let mut v: Vec<u8, 8> = Vec::new();
         v.push(0).unwrap();
         v.push(159).unwrap();
         v.push(146).unwrap();
@@ -696,7 +623,7 @@ mod tests {
 
     #[test]
     fn from_utf8_unchecked() {
-        let mut v: Vec<u8, U8> = Vec::new();
+        let mut v: Vec<u8, 8> = Vec::new();
         v.push(104).unwrap();
         v.push(101).unwrap();
         v.push(108).unwrap();
@@ -710,22 +637,22 @@ mod tests {
 
     #[test]
     fn from_num() {
-        let v = String::<U20>::from(18446744073709551615 as u64);
+        let v = String::<20>::from(18446744073709551615 as u64);
 
         assert_eq!(v, "18446744073709551615");
     }
 
     #[test]
     fn into_bytes() {
-        let s: String<U4> = String::from("ab");
-        let b: Vec<u8, U4> = s.into_bytes();
+        let s: String<4> = String::from("ab");
+        let b: Vec<u8, 4> = s.into_bytes();
         assert_eq!(b.len(), 2);
         assert_eq!(&['a' as u8, 'b' as u8], &b[..]);
     }
 
     #[test]
     fn as_str() {
-        let s: String<U4> = String::from("ab");
+        let s: String<4> = String::from("ab");
 
         assert_eq!(s.as_str(), "ab");
         // should be moved to fail test
@@ -735,7 +662,7 @@ mod tests {
 
     #[test]
     fn as_mut_str() {
-        let mut s: String<U4> = String::from("ab");
+        let mut s: String<4> = String::from("ab");
         let s = s.as_mut_str();
         s.make_ascii_uppercase();
         assert_eq!(s, "AB");
@@ -743,7 +670,7 @@ mod tests {
 
     #[test]
     fn push_str() {
-        let mut s: String<U8> = String::from("foo");
+        let mut s: String<8> = String::from("foo");
         assert!(s.push_str("bar").is_ok());
         assert_eq!("foobar", s);
         assert!(s.push_str("tender").is_err());
@@ -752,7 +679,7 @@ mod tests {
 
     #[test]
     fn push() {
-        let mut s: String<U6> = String::from("abc");
+        let mut s: String<6> = String::from("abc");
         assert!(s.push('1').is_ok());
         assert!(s.push('2').is_ok());
         assert!(s.push('3').is_ok());
@@ -762,13 +689,13 @@ mod tests {
 
     #[test]
     fn as_bytes() {
-        let s: String<U8> = String::from("hello");
+        let s: String<8> = String::from("hello");
         assert_eq!(&[104, 101, 108, 108, 111], s.as_bytes());
     }
 
     #[test]
     fn truncate() {
-        let mut s: String<U8> = String::from("hello");
+        let mut s: String<8> = String::from("hello");
         s.truncate(6);
         assert_eq!(s.len(), 5);
         s.truncate(2);
@@ -779,7 +706,7 @@ mod tests {
 
     #[test]
     fn pop() {
-        let mut s: String<U8> = String::from("foo");
+        let mut s: String<8> = String::from("foo");
         assert_eq!(s.pop(), Some('o'));
         assert_eq!(s.pop(), Some('o'));
         assert_eq!(s.pop(), Some('f'));
@@ -788,7 +715,7 @@ mod tests {
 
     #[test]
     fn pop_uenc() {
-        let mut s: String<U8> = String::from("é");
+        let mut s: String<8> = String::from("é");
         assert_eq!(s.len(), 3);
         match s.pop() {
             Some(c) => {
@@ -802,7 +729,7 @@ mod tests {
 
     #[test]
     fn is_empty() {
-        let mut v: String<U8> = String::new();
+        let mut v: String<8> = String::new();
         assert!(v.is_empty());
         let _ = v.push('a');
         assert!(!v.is_empty());
@@ -810,7 +737,7 @@ mod tests {
 
     #[test]
     fn clear() {
-        let mut s: String<U8> = String::from("foo");
+        let mut s: String<8> = String::from("foo");
         s.clear();
         assert!(s.is_empty());
         assert_eq!(0, s.len());

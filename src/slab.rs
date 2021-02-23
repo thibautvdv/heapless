@@ -1,7 +1,6 @@
 // NOTE this code has been based on slab (crates.io) v0.4.2
 
 use core::{mem, slice};
-use generic_array::{ArrayLength, GenericArray};
 
 /// Implementation detail
 #[doc(hidden)]
@@ -22,14 +21,9 @@ impl<A> crate::i::Slab<A> {
 }
 
 /// TODO
-pub struct Slab<T, N>(#[doc(hidden)] pub crate::i::Slab<GenericArray<Entry<T>, N>>)
-where
-    N: ArrayLength<Entry<T>>;
+pub struct Slab<T, const N: usize>(#[doc(hidden)] pub crate::i::Slab<[Entry<T>; N]>);
 
-impl<T, N> Slab<T, N>
-where
-    N: ArrayLength<Entry<T>>,
-{
+impl<T, const N: usize> Slab<T, N> {
     /// TODO
     pub fn new() -> Self {
         Slab(crate::i::Slab::new())
@@ -102,10 +96,7 @@ where
     }
 }
 
-impl<T, N> Default for Slab<T, N>
-where
-    N: ArrayLength<Entry<T>>,
-{
+impl<T, const N: usize> Default for Slab<T, N> {
     fn default() -> Self {
         Self::new()
     }

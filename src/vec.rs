@@ -1,6 +1,5 @@
 use core::{fmt, hash, iter::FromIterator, mem::MaybeUninit, ops, ptr, slice};
 
-use generic_array::{ArrayLength, GenericArray};
 use hash32;
 
 impl<A> crate::i::Vec<A> {
@@ -13,10 +12,7 @@ impl<A> crate::i::Vec<A> {
     }
 }
 
-impl<T, N> crate::i::Vec<GenericArray<T, N>>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> crate::i::Vec<[T; N]> {
     pub(crate) fn as_slice(&self) -> &[T] {
         // NOTE(unsafe) avoid bound checks in the slicing operation
         // &buffer[..self.len]
@@ -30,7 +26,7 @@ where
     }
 
     pub(crate) fn capacity(&self) -> usize {
-        N::to_usize()
+        N
     }
 
     pub(crate) fn clear(&mut self) {
@@ -162,13 +158,10 @@ where
 /// ```
 // repr(transparent) is needed for [`String::as_mut_vec`]
 #[repr(transparent)]
-pub struct Vec<T, N>(#[doc(hidden)] pub crate::i::Vec<GenericArray<T, N>>)
-where
-    N: ArrayLength<T>;
+pub struct Vec<T, const N: usize>(#[doc(hidden)] pub crate::i::Vec<[T; N]>);
 
-impl<T, N> Clone for Vec<T, N>
+impl<T, const N: usize> Clone for Vec<T, N>
 where
-    N: ArrayLength<T>,
     T: Clone,
 {
     fn clone(&self) -> Self {
@@ -176,10 +169,7 @@ where
     }
 }
 
-impl<T, N> Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Vec<T, N> {
     /* Constructors */
     /// Constructs a new, empty vector with a fixed capacity of `N`
     ///
@@ -515,29 +505,22 @@ where
     }
 }
 
-impl<T, N> Default for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Default for Vec<T, N> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T, N> fmt::Debug for Vec<T, N>
+impl<T, const N: usize> fmt::Debug for Vec<T, N>
 where
     T: fmt::Debug,
-    N: ArrayLength<T>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         <[T] as fmt::Debug>::fmt(self, f)
     }
 }
 
-impl<N> fmt::Write for Vec<u8, N>
-where
-    N: ArrayLength<u8>,
-{
+impl<const N: usize> fmt::Write for Vec<u8, N> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         match self.extend_from_slice(s.as_bytes()) {
             Ok(()) => Ok(()),
@@ -546,19 +529,13 @@ where
     }
 }
 
-impl<T, N> Drop for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Drop for Vec<T, N> {
     fn drop(&mut self) {
         unsafe { ptr::drop_in_place(&mut self[..]) }
     }
 }
 
-impl<T, N> Extend<T> for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Extend<T> for Vec<T, N> {
     fn extend<I>(&mut self, iter: I)
     where
         I: IntoIterator<Item = T>,
@@ -567,10 +544,9 @@ where
     }
 }
 
-impl<'a, T, N> Extend<&'a T> for Vec<T, N>
+impl<'a, T, const N: usize> Extend<&'a T> for Vec<T, N>
 where
     T: 'a + Copy,
-    N: ArrayLength<T>,
 {
     fn extend<I>(&mut self, iter: I)
     where
@@ -580,30 +556,25 @@ where
     }
 }
 
-impl<T, N> hash::Hash for Vec<T, N>
+impl<T, const N: usize> hash::Hash for Vec<T, N>
 where
     T: core::hash::Hash,
-    N: ArrayLength<T>,
 {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         <[T] as hash::Hash>::hash(self, state)
     }
 }
 
-impl<T, N> hash32::Hash for Vec<T, N>
+impl<T, const N: usize> hash32::Hash for Vec<T, N>
 where
     T: hash32::Hash,
-    N: ArrayLength<T>,
 {
     fn hash<H: hash32::Hasher>(&self, state: &mut H) {
         <[T] as hash32::Hash>::hash(self, state)
     }
 }
 
-impl<'a, T, N> IntoIterator for &'a Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<'a, T, const N: usize> IntoIterator for &'a Vec<T, N> {
     type Item = &'a T;
     type IntoIter = slice::Iter<'a, T>;
 
@@ -612,10 +583,7 @@ where
     }
 }
 
-impl<'a, T, N> IntoIterator for &'a mut Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<'a, T, const N: usize> IntoIterator for &'a mut Vec<T, N> {
     type Item = &'a mut T;
     type IntoIter = slice::IterMut<'a, T>;
 
@@ -624,10 +592,7 @@ where
     }
 }
 
-impl<T, N> FromIterator<T> for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> FromIterator<T> for Vec<T, N> {
     fn from_iter<I>(iter: I) -> Self
     where
         I: IntoIterator<Item = T>,
@@ -646,18 +611,12 @@ where
 ///
 /// [`Vec`]: (https://doc.rust-lang.org/std/vec/struct.Vec.html)
 ///
-pub struct IntoIter<T, N>
-where
-    N: ArrayLength<T>,
-{
+pub struct IntoIter<T, const N: usize> {
     vec: Vec<T, N>,
     next: usize,
 }
 
-impl<T, N> Iterator for IntoIter<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Iterator for IntoIter<T, N> {
     type Item = T;
     fn next(&mut self) -> Option<Self::Item> {
         if self.next < self.vec.len() {
@@ -674,10 +633,9 @@ where
     }
 }
 
-impl<T, N> Clone for IntoIter<T, N>
+impl<T, const N: usize> Clone for IntoIter<T, N>
 where
     T: Clone,
-    N: ArrayLength<T>,
 {
     fn clone(&self) -> Self {
         Self {
@@ -687,10 +645,7 @@ where
     }
 }
 
-impl<T, N> Drop for IntoIter<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> Drop for IntoIter<T, N> {
     fn drop(&mut self) {
         unsafe {
             // Drop all the elements that have not been moved out of vec
@@ -701,10 +656,7 @@ where
     }
 }
 
-impl<T, N> IntoIterator for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> IntoIterator for Vec<T, N> {
     type Item = T;
     type IntoIter = IntoIter<T, N>;
 
@@ -713,10 +665,8 @@ where
     }
 }
 
-impl<A, B, N1, N2> PartialEq<Vec<B, N2>> for Vec<A, N1>
+impl<A, B, const N1: usize, const N2: usize> PartialEq<Vec<B, N2>> for Vec<A, N1>
 where
-    N1: ArrayLength<A>,
-    N2: ArrayLength<B>,
     A: PartialEq<B>,
 {
     fn eq(&self, other: &Vec<B, N2>) -> bool {
@@ -726,10 +676,9 @@ where
 
 macro_rules! eq {
     ($Lhs:ty, $Rhs:ty) => {
-        impl<'a, 'b, A, B, N> PartialEq<$Rhs> for $Lhs
+        impl<'a, 'b, A, B, const N: usize> PartialEq<$Rhs> for $Lhs
         where
             A: PartialEq<B>,
-            N: ArrayLength<A>,
         {
             fn eq(&self, other: &$Rhs) -> bool {
                 <[A]>::eq(self, &other[..])
@@ -756,17 +705,9 @@ array!(
     26, 27, 28, 29, 30, 31, 32
 );
 
-impl<T, N> Eq for Vec<T, N>
-where
-    N: ArrayLength<T>,
-    T: Eq,
-{
-}
+impl<T, const N: usize> Eq for Vec<T, N> where T: Eq {}
 
-impl<T, N> ops::Deref for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> ops::Deref for Vec<T, N> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
@@ -774,49 +715,34 @@ where
     }
 }
 
-impl<T, N> ops::DerefMut for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> ops::DerefMut for Vec<T, N> {
     fn deref_mut(&mut self) -> &mut [T] {
         self.0.as_mut_slice()
     }
 }
 
-impl<T, N> AsRef<Vec<T, N>> for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> AsRef<Vec<T, N>> for Vec<T, N> {
     #[inline]
     fn as_ref(&self) -> &Self {
         self
     }
 }
 
-impl<T, N> AsMut<Vec<T, N>> for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> AsMut<Vec<T, N>> for Vec<T, N> {
     #[inline]
     fn as_mut(&mut self) -> &mut Self {
         self
     }
 }
 
-impl<T, N> AsRef<[T]> for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> AsRef<[T]> for Vec<T, N> {
     #[inline]
     fn as_ref(&self) -> &[T] {
         self
     }
 }
 
-impl<T, N> AsMut<[T]> for Vec<T, N>
-where
-    N: ArrayLength<T>,
-{
+impl<T, const N: usize> AsMut<[T]> for Vec<T, N> {
     #[inline]
     fn as_mut(&mut self) -> &mut [T] {
         self
@@ -825,13 +751,13 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{consts::*, Vec};
+    use crate::Vec;
     use as_slice::AsSlice;
     use core::fmt::Write;
 
     #[test]
     fn static_new() {
-        static mut _V: Vec<i32, U4> = Vec(crate::i::Vec::new());
+        static mut _V: Vec<i32, 4> = Vec(crate::i::Vec::new());
     }
 
     macro_rules! droppable {
@@ -862,7 +788,7 @@ mod tests {
         droppable!();
 
         {
-            let mut v: Vec<Droppable, U2> = Vec::new();
+            let mut v: Vec<Droppable, 2> = Vec::new();
             v.push(Droppable::new()).ok().unwrap();
             v.push(Droppable::new()).ok().unwrap();
             v.pop().unwrap();
@@ -871,7 +797,7 @@ mod tests {
         assert_eq!(unsafe { COUNT }, 0);
 
         {
-            let mut v: Vec<Droppable, U2> = Vec::new();
+            let mut v: Vec<Droppable, 2> = Vec::new();
             v.push(Droppable::new()).ok().unwrap();
             v.push(Droppable::new()).ok().unwrap();
         }
@@ -881,8 +807,8 @@ mod tests {
 
     #[test]
     fn eq() {
-        let mut xs: Vec<i32, U4> = Vec::new();
-        let mut ys: Vec<i32, U8> = Vec::new();
+        let mut xs: Vec<i32, 4> = Vec::new();
+        let mut ys: Vec<i32, 8> = Vec::new();
 
         assert_eq!(xs, ys);
 
@@ -894,7 +820,7 @@ mod tests {
 
     #[test]
     fn full() {
-        let mut v: Vec<i32, U4> = Vec::new();
+        let mut v: Vec<i32, 4> = Vec::new();
 
         v.push(0).unwrap();
         v.push(1).unwrap();
@@ -906,7 +832,7 @@ mod tests {
 
     #[test]
     fn iter() {
-        let mut v: Vec<i32, U4> = Vec::new();
+        let mut v: Vec<i32, 4> = Vec::new();
 
         v.push(0).unwrap();
         v.push(1).unwrap();
@@ -924,7 +850,7 @@ mod tests {
 
     #[test]
     fn iter_mut() {
-        let mut v: Vec<i32, U4> = Vec::new();
+        let mut v: Vec<i32, 4> = Vec::new();
 
         v.push(0).unwrap();
         v.push(1).unwrap();
@@ -943,7 +869,7 @@ mod tests {
     #[test]
     fn collect_from_iter() {
         let slice = &[1, 2, 3];
-        let vec = slice.iter().cloned().collect::<Vec<_, U4>>();
+        let vec = slice.iter().cloned().collect::<Vec<_, 4>>();
         assert_eq!(vec, slice);
     }
 
@@ -951,12 +877,12 @@ mod tests {
     #[should_panic]
     fn collect_from_iter_overfull() {
         let slice = &[1, 2, 3];
-        let _vec = slice.iter().cloned().collect::<Vec<_, U2>>();
+        let _vec = slice.iter().cloned().collect::<Vec<_, 2>>();
     }
 
     #[test]
     fn iter_move() {
-        let mut v: Vec<i32, U4> = Vec::new();
+        let mut v: Vec<i32, 4> = Vec::new();
         v.push(0).unwrap();
         v.push(1).unwrap();
         v.push(2).unwrap();
@@ -976,7 +902,7 @@ mod tests {
         droppable!();
 
         {
-            let mut vec: Vec<Droppable, U2> = Vec::new();
+            let mut vec: Vec<Droppable, 2> = Vec::new();
             vec.push(Droppable::new()).ok().unwrap();
             vec.push(Droppable::new()).ok().unwrap();
             let mut items = vec.into_iter();
@@ -988,7 +914,7 @@ mod tests {
         assert_eq!(unsafe { COUNT }, 0);
 
         {
-            let mut vec: Vec<Droppable, U2> = Vec::new();
+            let mut vec: Vec<Droppable, 2> = Vec::new();
             vec.push(Droppable::new()).ok().unwrap();
             vec.push(Droppable::new()).ok().unwrap();
             let _items = vec.into_iter();
@@ -998,7 +924,7 @@ mod tests {
         assert_eq!(unsafe { COUNT }, 0);
 
         {
-            let mut vec: Vec<Droppable, U2> = Vec::new();
+            let mut vec: Vec<Droppable, 2> = Vec::new();
             vec.push(Droppable::new()).ok().unwrap();
             vec.push(Droppable::new()).ok().unwrap();
             let mut items = vec.into_iter();
@@ -1010,7 +936,7 @@ mod tests {
 
     #[test]
     fn push_and_pop() {
-        let mut v: Vec<i32, U4> = Vec::new();
+        let mut v: Vec<i32, 4> = Vec::new();
         assert_eq!(v.len(), 0);
 
         assert_eq!(v.pop(), None);
@@ -1028,7 +954,7 @@ mod tests {
 
     #[test]
     fn resize_size_limit() {
-        let mut v: Vec<u8, U4> = Vec::new();
+        let mut v: Vec<u8, 4> = Vec::new();
 
         v.resize(0, 0).unwrap();
         v.resize(4, 0).unwrap();
@@ -1037,7 +963,7 @@ mod tests {
 
     #[test]
     fn resize_length_cases() {
-        let mut v: Vec<u8, U4> = Vec::new();
+        let mut v: Vec<u8, 4> = Vec::new();
 
         assert_eq!(v.len(), 0);
 
@@ -1064,7 +990,7 @@ mod tests {
 
     #[test]
     fn resize_contents() {
-        let mut v: Vec<u8, U4> = Vec::new();
+        let mut v: Vec<u8, 4> = Vec::new();
 
         // New entries take supplied value when growing
         v.resize(1, 17).unwrap();
@@ -1087,7 +1013,7 @@ mod tests {
 
     #[test]
     fn resize_default() {
-        let mut v: Vec<u8, U4> = Vec::new();
+        let mut v: Vec<u8, 4> = Vec::new();
 
         // resize_default is implemented using resize, so just check the
         // correct value is being written.
@@ -1097,14 +1023,14 @@ mod tests {
 
     #[test]
     fn write() {
-        let mut v: Vec<u8, U4> = Vec::new();
+        let mut v: Vec<u8, 4> = Vec::new();
         write!(v, "{:x}", 1234).unwrap();
         assert_eq!(&v[..], b"4d2");
     }
 
     #[test]
     fn extend_from_slice() {
-        let mut v: Vec<u8, U4> = Vec::new();
+        let mut v: Vec<u8, 4> = Vec::new();
         assert_eq!(v.len(), 0);
         v.extend_from_slice(&[1, 2]).unwrap();
         assert_eq!(v.len(), 2);
@@ -1120,17 +1046,17 @@ mod tests {
     #[test]
     fn from_slice() {
         // Successful construction
-        let v: Vec<u8, U4> = Vec::from_slice(&[1, 2, 3]).unwrap();
+        let v: Vec<u8, 4> = Vec::from_slice(&[1, 2, 3]).unwrap();
         assert_eq!(v.len(), 3);
         assert_eq!(v.as_slice(), &[1, 2, 3]);
 
         // Slice too large
-        assert!(Vec::<u8, U2>::from_slice(&[1, 2, 3]).is_err());
+        assert!(Vec::<u8, 2>::from_slice(&[1, 2, 3]).is_err());
     }
 
     #[test]
     fn starts_with() {
-        let v: Vec<_, U8> = Vec::from_slice(b"ab").unwrap();
+        let v: Vec<_, 8> = Vec::from_slice(b"ab").unwrap();
         assert!(v.starts_with(&[]));
         assert!(v.starts_with(b""));
         assert!(v.starts_with(b"a"));
@@ -1142,7 +1068,7 @@ mod tests {
 
     #[test]
     fn ends_with() {
-        let v: Vec<_, U8> = Vec::from_slice(b"ab").unwrap();
+        let v: Vec<_, 8> = Vec::from_slice(b"ab").unwrap();
         assert!(v.ends_with(&[]));
         assert!(v.ends_with(b""));
         assert!(v.ends_with(b"b"));

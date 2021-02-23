@@ -18,9 +18,9 @@ fn send() {
     {
     }
 
-    is_send::<Consumer<IsSend, consts::U4>>();
-    is_send::<Producer<IsSend, consts::U4>>();
-    is_send::<Queue<IsSend, consts::U4>>();
-    is_send::<Vec<IsSend, consts::U4>>();
-    is_send::<HistoryBuffer<IsSend, consts::U4>>();
+    is_send::<Consumer<IsSend, 4>>();
+    is_send::<Producer<IsSend, 4>>();
+    is_send::<Queue<IsSend, 4>>();
+    is_send::<Vec<IsSend, 4>>();
+    is_send::<HistoryBuffer<IsSend, 4>>();
 }
