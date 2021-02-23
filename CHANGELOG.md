@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.6.0] - 2021-02-02
+
+### Changed
+
+- [breaking-change] The version of the `generic-array` dependency has been
+  bumped to v0.14.2.
+
+## [v0.5.6] - 2020-09-18
+
+### Added
+
+- Added `as_mut_vec` for `String`
+- Added `set_len` for `Vec`
+- Performance improvements in `histbuf`
+
+### Fixed
+
+- `Producer` was made `Send` for single core applications
+
+## [v0.5.5] - 2020-05-04
+
+### Added
+
+- Added `HistoryBuffer`
+- Added extra methods to `Vec`: `from_slice`, `starts_with`, `ends_with`
+- Optional `ufmt` support for `String` and `Vec`
+- Added `pool` support for bare-metal `armebv7r-` targets
+- Added Sync to `pool` for `x86`
+
+## [v0.5.4] - 2020-04-06
+
+### Added
+
+- Added `StableDeref` implementation for `pool::Box` and `pool::singleton::Box`.
+
 ## [v0.5.3] - 2020-01-27
 
 ### Added
@@ -288,7 +323,10 @@ architecture.
 
 - Initial release
 
-[Unreleased]: https://github.com/japaric/heapless/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/japaric/heapless/compare/v0.5.5...HEAD
+[v0.5.5]: https://github.com/japaric/heapless/compare/v0.5.4...v0.5.5
+[v0.5.4]: https://github.com/japaric/heapless/compare/v0.5.3...v0.5.4
+[v0.5.3]: https://github.com/japaric/heapless/compare/v0.5.2...v0.5.3
 [v0.5.2]: https://github.com/japaric/heapless/compare/v0.5.1...v0.5.2
 [v0.5.1]: https://github.com/japaric/heapless/compare/v0.5.0...v0.5.1
 [v0.5.0]: https://github.com/japaric/heapless/compare/v0.4.4...v0.5.0

@@ -17,11 +17,14 @@ keywords = [
 license = "MIT OR Apache-2.0"
 name = "heapless"
 repository = "https://github.com/japaric/heapless"
-version = "0.5.3"
+version = "0.6.0"
 
 [features]
 default = ["cas"]
 cas = []
+ufmt-impl = ["ufmt-write"]
+# read the docs before enabling: makes `Pool` Sync on x86_64
+x86-sync-pool = []
 # only for tests
 __trybuild = []
 
@@ -29,11 +32,22 @@ __trybuild = []
 scoped_threadpool = "0.1.8"
 
 [dependencies]
-as-slice = "0.1.0"
-generic-array = "0.13.0"
+as-slice = "0.1.4"
+generic-array = "0.14.2"
 hash32 = "0.1.0"
 
 [dependencies.serde]
 version = "1"
 optional = true
 default-features = false
+
+[dependencies.stable_deref_trait]
+version = "1"
+default-features = false
+
+[dependencies.ufmt-write]
+version = "0.1"
+optional = true
+
+[dev-dependencies.ufmt]
+version = "0.1"
